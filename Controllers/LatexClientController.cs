@@ -104,7 +104,7 @@ namespace Inventory.API.Controllers
                 Dry_rubber = dryRubber,
                 Dry_rubber_value = dryRubberValue,
                 Final_value = finalValue,
-                Created_on = DateTime.Now,
+                Created_on = DateTime.UtcNow,
                 processing_fees = (int)finalDeduction
             };
 
