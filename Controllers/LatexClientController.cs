@@ -122,10 +122,28 @@ namespace Inventory.API.Controllers
         [HttpGet("gettodayentries")]
         public IActionResult GetTodayEntries()
         {
-            var today = DateTime.Today;
+            // STEP 1: Convert today's IST range to UTC (for DB filtering)
+            var istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+            var todayIst = TimeZoneInfo.ConvertTime(DateTime.UtcNow, istZone).Date;
+            var todayUtcStart = TimeZoneInfo.ConvertTimeToUtc(todayIst, istZone);
+            var tomorrowUtcStart = todayUtcStart.AddDays(1);
 
-            var entries = _context.latex_stock_in
-                .Where(x => x.Created_on.Date == today)
+            // STEP 2: Fetch from DB using UTC range
+            var rawEntries = _context.latex_stock_in
+                .Where(x => x.Created_on >= todayUtcStart && x.Created_on < tomorrowUtcStart)
+                .ToList();
+
+            if (!rawEntries.Any())
+            {
+                return NotFound(new
+                {
+                    Message = "No entries found for today",
+                    StatusCode = 404
+                });
+            }
+
+            // STEP 3: Convert UTC → IST for UI display
+            var entries = rawEntries
                 .Select(x => new
                 {
                     x.Id,
@@ -138,21 +156,12 @@ namespace Inventory.API.Controllers
                     x.Dry_rubber,
                     x.Dry_rubber_value,
                     x.Final_value,
-                    x.Created_on,
+                    Created_on = TimeZoneInfo.ConvertTimeFromUtc(x.Created_on, istZone),
                     x.Is_drc_added,
                     x.processing_fees
                 })
                 .OrderByDescending(x => x.Created_on)
                 .ToList();
-
-            if (!entries.Any())
-            {
-                return NotFound(new
-                {
-                    Message = "No entries found for today",
-                    StatusCode = 404
-                });
-            }
 
             return Ok(new
             {
@@ -161,6 +170,7 @@ namespace Inventory.API.Controllers
                 StatusCode = 200
             });
         }
+
 
         [HttpPut("update-sample-drc/{id}")]
         public IActionResult UpdateSampleDrc(int id, [FromBody] DTOs.UpdateSampleDrcDto request)
