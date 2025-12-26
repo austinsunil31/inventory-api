@@ -8,5 +8,6 @@
         public string Mobile_num { get; set; }
         public string Plot_location { get; set; }
         public DateTime Created_at { get; set; }
+        public bool? IsHandledByClient { get; set; }
     }
 }
