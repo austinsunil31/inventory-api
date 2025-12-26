@@ -275,6 +275,45 @@ namespace Inventory.API.Controllers
             });
         }
 
+        [HttpGet("getentriesbydate")]
+        public IActionResult GetEntriesByDate([FromQuery] string date)
+        {
+            var istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+            var selectedIstDate = DateTime.Parse(date).Date;
+
+            var startUtc = TimeZoneInfo.ConvertTimeToUtc(selectedIstDate, istZone);
+            var endUtc = startUtc.AddDays(1);
+
+            var rawEntries = _context.latex_stock_in
+                .Where(x => x.Created_on >= startUtc && x.Created_on < endUtc)
+                .ToList();
+
+            var entries = rawEntries.Select(x => new
+            {
+                x.Id,
+                x.Client_no,
+                x.Total_weight,
+                x.Latex_weight,
+                x.Can_count,
+                x.Sample_drc,
+                x.Total_drc,
+                x.Dry_rubber,
+                x.Dry_rubber_value,
+                x.Final_value,
+                Created_on = TimeZoneInfo.ConvertTimeFromUtc(x.Created_on, istZone),
+                x.Is_drc_added,
+                x.processing_fees
+            }).OrderByDescending(x => x.Created_on)
+              .ToList();
+
+            return Ok(new
+            {
+                Data = entries,
+                Message = "Entries fetched successfully",
+                StatusCode = 200
+            });
+        }
+
 
     }
 }
