@@ -1,4 +1,6 @@
-﻿namespace Inventory.API.Models
+﻿using Inventory.API.Models.DTOs;
+
+namespace Inventory.API.Models
 {
     public class LatexClients
     {
@@ -9,5 +11,6 @@
         public string Plot_location { get; set; }
         public DateTime Created_at { get; set; }
         public bool? IsHandledByClient { get; set; }
+        public bool IsActive { get; set; }
     }
 }
