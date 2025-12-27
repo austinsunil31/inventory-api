@@ -1,5 +1,8 @@
-﻿using Inventory.API.Models.DTOs;
+﻿using Inventory.API.DTOs;
+using Inventory.API.Models;
+using Inventory.API.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.API.Controllers
 {
@@ -310,6 +313,57 @@ namespace Inventory.API.Controllers
             {
                 Data = entries,
                 Message = "Entries fetched successfully",
+                StatusCode = 200
+            });
+        }
+
+        [HttpPost("addclient")]
+        public async Task<IActionResult> AddClient([FromBody] LatexClientsDto model)
+        {
+            if (string.IsNullOrWhiteSpace(model.Name) ||
+                string.IsNullOrWhiteSpace(model.Mobile_num) ||
+                string.IsNullOrWhiteSpace(model.Plot_location))
+            {
+                return BadRequest(new { Message = "All required fields must be filled" });
+            }
+
+            // Generate next Client No
+            var lastClient = await _context.latex_clients
+                .OrderByDescending(c => c.Id)
+                .FirstOrDefaultAsync();
+
+            int nextNumber = lastClient == null ? 0 : int.Parse(lastClient.Client_no.Substring(2)) + 1;
+            string generatedClientNo = $"KL{nextNumber:D3}";
+
+            var newClient = new LatexClients
+            {
+                Client_no = generatedClientNo,
+                Name = model.Name,
+                Mobile_num = model.Mobile_num,
+                Plot_location = model.Plot_location,
+                IsHandledByClient = model.IsHandledByClient, // bool?
+                IsActive = true,
+                Created_at = DateTime.UtcNow
+            };
+
+            _context.latex_clients.Add(newClient);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "Client added successfully", Data = newClient, StatusCode = 200 });
+        }
+
+        [HttpGet("activeclients")]
+        public async Task<IActionResult> GetActiveClients()
+        {
+            var clients = await _context.latex_clients
+                .Where(x => x.IsActive == true)
+                .OrderBy(x => x.Client_no)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                Data = clients,
+                Message = "Active clients fetched successfully",
                 StatusCode = 200
             });
         }
