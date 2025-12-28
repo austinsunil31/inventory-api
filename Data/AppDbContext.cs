@@ -10,4 +10,6 @@ public class AppDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<LatexClients> latex_clients { get; set; }
     public DbSet<LatexStockIn> latex_stock_in { get; set; }
+    public DbSet<LatexRate> latex_rates { get; set; }
+
 }

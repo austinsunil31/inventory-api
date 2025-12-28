@@ -206,7 +206,18 @@ namespace Inventory.API.Controllers
 
             decimal totalDrc = (decimal)(request.Sample_Drc * 5);
             decimal dryRubber = (totalDrc * stockIn.Latex_weight) / 100;
-            decimal ratePerKg = 167;
+            var rateRecord = _context.latex_rates.FirstOrDefault(s => s.Rate_Date == stockIn.Created_on.Date);
+
+            if (rateRecord == null)
+            {
+                return NotFound(new
+                {
+                    Message = "Latex rate not available for this date.",
+                    StatusCode = 404
+                });
+            }
+
+            decimal ratePerKg = rateRecord.Latex_Rate;
             decimal dryRubberValue = dryRubber * ratePerKg;
 
             decimal deduction;
